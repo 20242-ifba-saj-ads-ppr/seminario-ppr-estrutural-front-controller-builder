@@ -1,7 +1,7 @@
 # FrontController
 
 ## O que é
-O FrontController é um padrão de design utilizado para centralizar o controle de requisições em um único ponto de entrada. Em vez de cada parte do sistema lidar diretamente com a criação e manipulação de entidades, todas as solicitações passam por um controlador central, que decide para onde encaminhá-las.
+O FrontController é um padrão de projeto utilizado para centralizar o controle de requisições em um único ponto de entrada. Em vez de cada parte do sistema lidar diretamente com a criação e manipulação de entidades, todas as solicitações passam por um controlador central, que decide para onde encaminhá-las.
 
 ## Motivação
 Imagine um sistema de gerenciamento de entidades (monstros) em um jogo onde as requisições para criar ou instanciar monstros são centralizadas por um único ponto de entrada. O padrão FrontController permite concentrar o controle de requisições em um único objeto, enquanto a EntityFactory gerencia a criação de objetos específicos (no caso, monstros) com base em prefabs. Dessa forma, o código cliente não precisa conhecer os detalhes de como cada monstro é instanciado, bastando enviar um comando e os parâmetros necessários.
