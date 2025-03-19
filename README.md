@@ -25,13 +25,11 @@ class NPC {
 }
 NPC --|> Entity
 
-
 class EntityFactory {
     - entities: Object
     + registerEntity(prefab, factoryMethod)
     + createEntity(prefab): Entity
 }
-
 
 class ModuleA {
     + createSpider(): Entity
@@ -41,14 +39,13 @@ class ModuleB {
     + createVillager(): Entity
 }
 
-
 EntityFactory --> Entity : cria instâncias
 ModuleA --> EntityFactory : utiliza
 ModuleB --> EntityFactory : utiliza
 
 @enduml
 
-``
+```
 
 Utilizando o padrão Front Controller combinado com o Dispatcher, Handlers e a Entity Factory, o sistema se beneficia de uma estrutura mais organizada e modular:
 
