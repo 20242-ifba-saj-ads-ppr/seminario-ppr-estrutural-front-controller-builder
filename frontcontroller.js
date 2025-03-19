@@ -1,40 +1,4 @@
-class EntityFactory {
-    constructor() {
-        this.entities = {};
-    }
-
-    handlePrefabs = {
-        spider: () => new Monster("spider", "Spider", 100, 20),
-        spider_warrior: () => new Monster("spider_warrior", "Spider Warrior", 200, 40),
-        spider_hider: () => new Monster("spider_hider", "Cave Spider", 600, 20)
-    }
-
-    registerMonster(prefab) {
-        console.log(`[Log] New Entity Registered: ${prefab}`);
-        this.entities[prefab] = this.handlePrefabs[prefab];
-    }
-
-    createMonster(prefab) {
-        if (!this.entities[prefab]) {
-            this.registerMonster(prefab);
-        }
-        console.log(`[Log] Instantiating New Entity: ${prefab}`);
-        let newEntity = {};
-        newEntity.source = this.entities[prefab]();
-        newEntity.health = newEntity.source.maxhealth;
-        return newEntity;
-    }
-
-    bulkCreateMonster(prefab, quantity) {
-        let monsters = [];
-        for (let i = 0; i < quantity; i++) {
-            monsters.push(this.createMonster(prefab));
-        }
-        return monsters;
-    }
-}
-
-class Monster {
+class Entity {
     constructor(prefab, name, maxhealth, damage) {
         this.prefab = prefab;
         this.name = name;
@@ -50,20 +14,51 @@ class Monster {
     }
 }
 
+class Monster extends Entity {
+    constructor(prefab, name, maxhealth, damage) {
+        super(prefab, name, maxhealth, damage);
+    }
+}
+
+class NPC extends Entity {
+    constructor(prefab, name) {
+        super(prefab, name, 100, 0);
+    }
+}
+
+class EntityFactory {
+    constructor() {
+        this.entities = {};
+    }
+
+    registerEntity(prefab, factoryMethod) {
+        console.log(`[Log] New Entity Registered: ${prefab}`);
+        this.entities[prefab] = factoryMethod;
+    }
+
+    createEntity(prefab) {
+        if (!this.entities[prefab]) {
+            console.error(`[Error] No entity registered for: ${prefab}`);
+            return null;
+        }
+        console.log(`[Log] Instantiating New Entity: ${prefab}`);
+        return this.entities[prefab]();
+    }
+}
+
 class FrontController {
     constructor() {
         this.entityFactory = new EntityFactory();
-
-        this.routes = {
-            'createMonster': this.entityFactory.createMonster.bind(this.entityFactory),
-            'bulkCreateMonster': this.entityFactory.bulkCreateMonster.bind(this.entityFactory)
-        };
+        
+        this.entityFactory.registerEntity('spider', () => new Monster("spider", "Spider", 100, 20));
+        this.entityFactory.registerEntity('spider_warrior', () => new Monster("spider_warrior", "Spider Warrior", 200, 40));
+        this.entityFactory.registerEntity('npc_villager', () => new NPC("npc_villager", "Villager"));
     }
 
     dispatch(request) {
         const { command, params } = request;
-        if (this.routes[command]) {
-            return this.routes[command](...params);
+        if (command === 'createEntity') {
+            return this.entityFactory.createEntity(params[0]);
         } else {
             console.error(`[FrontController] Unknown command: ${command}`);
         }
@@ -72,13 +67,10 @@ class FrontController {
 
 const frontController = new FrontController();
 
-const spider = frontController.dispatch({ command: 'createMonster', params: ['spider'] });
-const spiderWarrior = frontController.dispatch({ command: 'createMonster', params: ['spider_warrior'] });
-const spiderHider = frontController.dispatch({ command: 'createMonster', params: ['spider_hider'] });
-
-const bulkSpiders = frontController.dispatch({ command: 'bulkCreateMonster', params: ['spider', 6] });
+const spider = frontController.dispatch({ command: 'createEntity', params: ['spider'] });
+const spiderWarrior = frontController.dispatch({ command: 'createEntity', params: ['spider_warrior'] });
+const villager = frontController.dispatch({ command: 'createEntity', params: ['npc_villager'] });
 
 console.log('Single Monster:', spider);
 console.log('Spider Warrior:', spiderWarrior);
-console.log('Spider Hider:', spiderHider);
-console.log('Bulk Spiders:', bulkSpiders);
+console.log('Villager NPC:', villager);
