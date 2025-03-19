@@ -1,5 +1,8 @@
 # FrontController
 
+## O que é
+O FrontController é um padrão de design utilizado para centralizar o controle de requisições em um único ponto de entrada. Em vez de cada parte do sistema lidar diretamente com a criação e manipulação de entidades, todas as solicitações passam por um controlador central, que decide para onde encaminhá-las.
+
 ## Motivação
 Imagine um sistema de gerenciamento de entidades (monstros) em um jogo onde as requisições para criar ou instanciar monstros são centralizadas por um único ponto de entrada. O padrão FrontController permite concentrar o controle de requisições em um único objeto, enquanto a EntityFactory gerencia a criação de objetos específicos (no caso, monstros) com base em prefabs. Dessa forma, o código cliente não precisa conhecer os detalhes de como cada monstro é instanciado, bastando enviar um comando e os parâmetros necessários.
 
@@ -8,32 +11,36 @@ Diagrama UML
 @startuml title Estrutura Expandida com FrontController e EntityFactory
 
 class FrontController {
+    routes: Object
+    entityFactory: EntityFactory
+    dispatch(request: Object): Object 
+}
 
-routes: Object
-entityFactory: EntityFactory
-dispatch(request: Object): Object }
 class EntityFactory {
+    entities: Object
+    registerMonster(prefab: String): void
+    createMonster(prefab: String): Object
+    bulkCreateMonster(prefab: String, quantity: Number): Object[] 
+}
 
-entities: Object
-registerMonster(prefab: String): void
-createMonster(prefab: String): Object
-bulkCreateMonster(prefab: String, quantity: Number): Object[] }
 class Monster {
+    prefab: String
+    name: String
+    maxhealth: Number
+    damage: Number
+    details(): void 
+}
 
-prefab: String
-name: String
-maxhealth: Number
-damage: Number
-details(): void }
-FrontController --> EntityFactory : utiliza EntityFactory --> Monster : instancia
+FrontController --> EntityFactory : utiliza 
+EntityFactory --> Monster : instancia
 @enduml
 ``` 
 ## Participantes
 
 ### FrontController (Controller)
-- Centraliza o controle das requisições, mapeando comandos para funções específicas.
+- Centraliza o controle das requisições, mapeando comandos para funções específicas de criação de criaturas.
 - Possui um objeto routes que associa cada comando a um método da EntityFactory.
-- O método dispatch recebe um objeto de requisição, extrai o comando e seus parâmetros e os encaminha para o método apropriado.
+- O método dispatch(request) recebe um objeto de requisição, extrai o comando e seus parâmetros e os encaminha para o método apropriado.
 
 
 ### EntityFactory (Factory)
@@ -47,8 +54,8 @@ FrontController --> EntityFactory : utiliza EntityFactory --> Monster : instanci
 - Representa a entidade monstro, contendo atributos como prefab, name, maxhealth e damage.
 - Possui o método details para exibir informações sobre o monstro, facilitando o debug e a visualização dos atributos.
 
-## Exemplo de Código
 
+## Exemplo de Código
 
 ### Classe EntityFactory
 
@@ -88,7 +95,6 @@ class EntityFactory {
         return monsters;
     }
 }
-
 ```
 
 ### Classe Monster
@@ -149,5 +155,7 @@ console.log('Spider Warrior:', spiderWarrior);
 console.log('Spider Hider:', spiderHider);
 console.log('Bulk Spiders:', bulkSpiders);
 ```
+
+
 ## Conclusão
 A combinação do padrão FrontController com a EntityFactory proporciona uma arquitetura flexível e escalável para o gerenciamento de entidades. O FrontController centraliza as requisições e delega as ações, enquanto a EntityFactory encapsula a lógica de criação dos objetos, facilitando a manutenção e extensão do sistema sem alterar o código cliente.
