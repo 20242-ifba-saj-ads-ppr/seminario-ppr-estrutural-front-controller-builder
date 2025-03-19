@@ -4,56 +4,136 @@
 O FrontController é um padrão de design utilizado para centralizar o controle de requisições em um único ponto de entrada. Ele é especialmente útil em sistemas onde o cliente faz uma solicitação sem saber qual classe específica atenderá a requisição.
 
 ## Motivação
-Imagine um sistema de gerenciamento de entidades em um jogo onde as requisições para criar ou instanciar objetos são centralizados por um único ponto de entrada. O padrão Front-Controller permite concentrar o controle de requisições em um único ponto, enquanto a Entity-Factory gerencia a criação de objetos específicos com base em prefabs (IDs, etc). Dessa forma, o código cliente não precisa conhecer os detalhes de como cada entidade é instanciada, bastando enviar um comando e os parâmetros necessários.
+Imagine um jogo onde diversas partes do código, espalhadas em módulos distintos, são responsáveis por criar entidades como monstros, NPCs e itens. Cada módulo conhece os detalhes de como instanciar cada entidade e implementa suas próprias verificações, validações e logs. 
 
 ```plantuml
-Diagrama UML
-@startuml title Estrutura Expandida com FrontController e EntityFactory
+
+@startuml
 
 abstract class Entity {
-    + prefab: String
-    + name: String
-    + maxhealth: Number
-    + damage: Number
+    - prefab: string
+    - name: string
+    - maxhealth: number
+    - damage: number
     + details(): void
 }
 
-class Monster extends Entity {}
-class NPC extends Entity {}
+class Monster {
+    + details(): void
+}
+Monster --|> Entity
+
+class NPC {
+    + details(): void
+}
+NPC --|> Entity
+
 
 class EntityFactory {
-    + registerEntity(prefab: String, factoryMethod: Function): void
-    + createEntity(prefab: String): Entity
+    - entities: Object
+    + registerEntity(prefab, factoryMethod)
+    + createEntity(prefab): Entity
 }
+
+
+class ModuleA {
+    + createSpider(): Entity
+}
+
+class ModuleB {
+    + createVillager(): Entity
+}
+
+
+EntityFactory --> Entity : cria instâncias
+ModuleA --> EntityFactory : utiliza
+ModuleB --> EntityFactory : utiliza
+
+@enduml
+
+``
+
+Utilizando o padrão Front Controller combinado com o Dispatcher, Handlers e a Entity Factory, o sistema se beneficia de uma estrutura mais organizada e modular:
+
+O Front Controller centraliza todas as requisições. Todo o fluxo de criação de entidades passa por esse ponto único, o que garante que ações como autenticação, logging ou validação sejam aplicadas de forma consistente.
+
+Desacoplamento:
+O código cliente não precisa conhecer os detalhes de como cada entidade é criada. Basta enviar um comando (por exemplo, createEntity) com os parâmetros necessários (como o ID do prefab). O Dispatcher encaminha essa requisição para o Handler responsável, que utiliza a Entity Factory para instanciar o objeto.
+
+```plantuml
+@startuml
+
+class Entity {
+  - prefab: string
+  - name: string
+  - maxhealth: number
+  - damage: number
+  + details(): void
+}
+
+class Monster {
+  + constructor(prefab, name, maxhealth, damage)
+}
+Monster --|> Entity
+
+class NPC {
+  + constructor(prefab, name)
+}
+NPC --|> Entity
+
+class EntityFactory {
+  - entities: Object
+  + registerEntity(prefab, factoryMethod)
+  + createEntity(prefab)
+}
+
+
+class CreateEntityHandler {
+  - entityFactory: EntityFactory
+  + execute(params): Entity
+}
+
+class Dispatcher {
+  - handlers: Object
+  + registerHandler(command, handler)
+  + dispatch(request): Entity
+}
+
 
 class FrontController {
-    + dispatch(request: Object): Entity
+  - entityFactory: EntityFactory
+  - dispatcher: Dispatcher
+  + dispatchRequest(request)
 }
 
-FrontController --> EntityFactory : utiliza 
-EntityFactory --> Entity : instancia
-Entity <|-- Monster
-Entity <|-- NPC
+
+FrontController --> Dispatcher : delega requisições
+FrontController --> EntityFactory : instancia e registra entidades
+Dispatcher --> CreateEntityHandler : mapeia comandos
+CreateEntityHandler --> EntityFactory : usa para criar Entity
+EntityFactory --> Entity : cria instâncias
+EntityFactory ..> Monster
+EntityFactory ..> NPC
+
 @enduml
+
 ``` 
 ## Participantes
 
-### FrontController (Controller)
-- Centraliza o controle das requisições, mapeando comandos para funções específicas de criação de criaturas.
-- Possui um objeto routes que associa cada comando a um método da EntityFactory.
-- O método dispatch(request) recebe um objeto de requisição, extrai o comando e seus parâmetros e os encaminha para o método apropriado.
+- **FrontController (Controller):** 
+Centraliza e gerencia todas as requisições relacionadas à criação de entidades (Monstros e NPCs).
 
+- **EntityFactory (Factory):**
+ Gerencia a criação de entidades baseadas em prefabs registrado
 
-### EntityFactory (Factory)
-- Gerencia a criação de monstros com base em prefabs pré-definidos.
-- Possui um objeto entities que mapeia cada prefab a uma função responsável por instanciar o monstro correspondente.
-- O método createMonster cria um novo monstro a partir do prefab solicitado, enquanto bulkCreateMonster permite criar múltiplas instâncias de uma vez.
-- Registra novos monstros dinamicamente se o prefab solicitado ainda não estiver registrado.
+- **Monster e NPC (Products):** Representam os produtos concretos criados pela EntityFactory.
 
+- **Dispatcher (Distribuidor de Requisições)** E ncontrar e chamar o Handler apropriado para cada requisição .
 
-### Monster (Product)
-- Representa a entidade monstro, contendo atributos como prefab, name, maxhealth e damage.
-- Possui o método details para exibir informações sobre o monstro, facilitando o debug e a visualização dos atributos.
+- **Handlers.**
+Handler (Manipulador de Requisições)
+
+Cada handler é responsável por executar uma ação específica.
 
 
 ## Exemplo de Código
@@ -61,6 +141,7 @@ Entity <|-- NPC
 ### Classe Entity (Abstração)
 
 ```js
+
 class Entity {
     constructor(prefab, name, maxhealth, damage) {
         this.prefab = prefab;
@@ -71,33 +152,25 @@ class Entity {
 
     details() {
         console.log(`[Log] ${this.prefab} information:
-            name: ${this.name}
-            maxhealth: ${this.maxhealth}
-            damage: ${this.damage}`);
+  name: ${this.name}
+  maxhealth: ${this.maxhealth}
+  damage: ${this.damage}`);
     }
 }
-```
 
-### Classe Monster
-```js
 class Monster extends Entity {
     constructor(prefab, name, maxhealth, damage) {
         super(prefab, name, maxhealth, damage);
     }
 }
-```
 
-### Classe NPC
-```js
 class NPC extends Entity {
     constructor(prefab, name) {
         super(prefab, name, 100, 0);
     }
 }
-```
 
-### Classe Entity-Factory
-```js
+
 class EntityFactory {
     constructor() {
         this.entities = {};
@@ -117,42 +190,70 @@ class EntityFactory {
         return this.entities[prefab]();
     }
 }
-```
 
-### Classe Front-Controller
 
-```js
-class FrontController {
+class CreateEntityHandler {
+    constructor(entityFactory) {
+        this.entityFactory = entityFactory;
+    }
+
+    execute(params) {
+        const [prefab] = params;
+        return this.entityFactory.createEntity(prefab);
+    }
+}
+
+
+class Dispatcher {
     constructor() {
-        this.entityFactory = new EntityFactory();
-        
-        this.entityFactory.registerEntity('spider', () => new Monster("spider", "Spider", 100, 20));
-        this.entityFactory.registerEntity('spider_warrior', () => new Monster("spider_warrior", "Spider Warrior", 200, 40));
-        this.entityFactory.registerEntity('npc_villager', () => new NPC("npc_villager", "Villager"));
+        this.handlers = {};
+    }
+
+    registerHandler(command, handler) {
+        this.handlers[command] = handler;
     }
 
     dispatch(request) {
         const { command, params } = request;
-        if (command === 'createEntity') {
-            return this.entityFactory.createEntity(params[0]);
+        const handler = this.handlers[command];
+        if (handler) {
+            return handler.execute(params);
         } else {
-            console.error(`[FrontController] Unknown command: ${command}`);
+            console.error(`[Dispatcher] Unknown command: ${command}`);
+            return null;
         }
     }
 }
-``` 
 
-### Demonstração (Client)
-```js
+class FrontController {
+    constructor() {
+        this.entityFactory = new EntityFactory();
+
+        this.entityFactory.registerEntity('spider', () => new Monster("spider", "Spider", 100, 20));
+        this.entityFactory.registerEntity('spider_warrior', () => new Monster("spider_warrior", "Spider Warrior", 200, 40));
+        this.entityFactory.registerEntity('npc_villager', () => new NPC("npc_villager", "Villager"));
+
+        this.dispatcher = new Dispatcher();
+        this.dispatcher.registerHandler('createEntity', new CreateEntityHandler(this.entityFactory));
+    }
+
+    dispatchRequest(request) {
+        console.log(`[FrontController] Received request: ${JSON.stringify(request)}`);
+        return this.dispatcher.dispatch(request);
+    }
+}
+
+
 const frontController = new FrontController();
 
-const spider = frontController.dispatch({ command: 'createEntity', params: ['spider'] });
-const spiderWarrior = frontController.dispatch({ command: 'createEntity', params: ['spider_warrior'] });
-const villager = frontController.dispatch({ command: 'createEntity', params: ['npc_villager'] });
+const spider = frontController.dispatchRequest({ command: 'createEntity', params: ['spider'] });
+const spiderWarrior = frontController.dispatchRequest({ command: 'createEntity', params: ['spider_warrior'] });
+const villager = frontController.dispatchRequest({ command: 'createEntity', params: ['npc_villager'] });
 
 console.log('Single Monster:', spider);
 console.log('Spider Warrior:', spiderWarrior);
 console.log('Villager NPC:', villager);
+
 ```
 
 
