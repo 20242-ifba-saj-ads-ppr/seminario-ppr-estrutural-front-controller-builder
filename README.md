@@ -1,13 +1,10 @@
 # FrontController
 
-## O que é
-O FrontController é um padrão de design utilizado para centralizar o controle de requisições em um único ponto de entrada. Ele é especialmente útil em sistemas onde o cliente faz uma solicitação sem saber qual classe específica atenderá a requisição.
 
 ## Motivação
 Imagine um jogo onde diversas partes do código, espalhadas em módulos distintos, são responsáveis por criar entidades como monstros, NPCs e itens. Cada módulo conhece os detalhes de como instanciar cada entidade e implementa suas próprias verificações, validações e logs. 
 
 ```plantuml
-
 @startuml
 
 abstract class Entity {
