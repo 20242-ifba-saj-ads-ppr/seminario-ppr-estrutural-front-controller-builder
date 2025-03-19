@@ -7,8 +7,8 @@ O FrontController é um padrão de design utilizado para centralizar o controle 
 Imagine um sistema de gerenciamento de entidades (monstros) em um jogo onde as requisições para criar ou instanciar monstros são centralizadas por um único ponto de entrada. O padrão FrontController permite concentrar o controle de requisições em um único objeto, enquanto a EntityFactory gerencia a criação de objetos específicos (no caso, monstros) com base em prefabs. Dessa forma, o código cliente não precisa conhecer os detalhes de como cada monstro é instanciado, bastando enviar um comando e os parâmetros necessários.
 
 ```plantuml
-Diagrama UML
-@startuml title Estrutura Expandida com FrontController e EntityFactory
+@startuml
+title Estrutura Expandida com FrontController e EntityFactory
 
 class FrontController {
     routes: Object
